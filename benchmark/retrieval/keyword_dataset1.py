@@ -540,23 +540,27 @@ def main() -> None:
     if args.k1 <= 0 or not 0 <= args.b <= 1:
         parser.error("k1 phải > 0 và b phải từ 0 đến 1")
 
-    corpus, queries = load_data(args.dataset)
-    print(f"Dataset {args.dataset}: {len(corpus)} captions, "
+    run(args.dataset, args.k1, args.b)
+
+
+def run(dataset="v2", k1=1.5, b=0.75):
+    corpus, queries = load_data(dataset)
+    print(f"Dataset {dataset}: {len(corpus)} captions, "
           f"{len({d['gif_id'] for d in corpus})} unique GIFs, {len(queries)} queries")
     print("Building BM25 inverted index (no embeddings/models/API)...")
     t0 = time.perf_counter()
-    index = BM25(corpus, args.k1, args.b)
+    index = BM25(corpus, k1, b)
     build_seconds = time.perf_counter() - t0
     print(f"Indexed {len(index.postings)} terms in {build_seconds:.2f}s")
-    bm25 = evaluate(index, queries, args.dataset)
-    latency = measure_latency(index, queries, args.dataset)
+    bm25 = evaluate(index, queries, dataset)
+    latency = measure_latency(index, queries, dataset)
     bm25["latency"] = {
         "queries_measured": latency["queries_measured"],
         "embedding": latency["embedding"], "search": latency["search"],
         "total": latency["total"], "details_file": "bm25_latency.json",
     }
 
-    reports, latencies = saved_semantic_reports(args.dataset, corpus, queries)
+    reports, latencies = saved_semantic_reports(dataset, corpus, queries)
     reports = {"bm25": bm25, **reports}
     latencies = {"bm25": latency, **latencies}
     rows = build_rows(corpus, queries, reports)
@@ -566,11 +570,11 @@ def main() -> None:
     write_json(OUT / "bm25_results.json", bm25)
     write_json(OUT / "bm25_latency.json", latency)
     comparison = {
-        "dataset": args.dataset, "corpus_captions": len(corpus), "queries": len(queries),
+        "dataset": dataset, "corpus_captions": len(corpus), "queries": len(queries),
         "unique_gifs": len(set(index.gif_ids)),
-        "input_corpus_sha256": sha256(DATASETS[args.dataset] / "corpus.jsonl"),
-        "input_queries_sha256": sha256(DATASETS[args.dataset] / "queries.jsonl"),
-        "bm25_config": {"k1": args.k1, "b": args.b, "tokenizer": TOKEN_PATTERN.pattern,
+        "input_corpus_sha256": sha256(DATASETS[dataset] / "corpus.jsonl"),
+        "input_queries_sha256": sha256(DATASETS[dataset] / "queries.jsonl"),
+        "bm25_config": {"k1": k1, "b": b, "tokenizer": TOKEN_PATTERN.pattern,
                          "index_build_seconds": round(build_seconds, 4),
                          "tie_break": "original_corpus_order", "ranking_unit": "unique_gif_id"},
         "models": {
@@ -584,7 +588,7 @@ def main() -> None:
     export_summary(OUT / "benchmark_summary.csv", reports, latencies, len(queries))
     export_wide(OUT / "query_comparison.csv", rows)
     export_long(OUT / "query_comparison_long.csv", rows)
-    export_html(OUT / "query_comparison.html", rows, reports, latencies, args.dataset)
+    export_html(OUT / "query_comparison.html", rows, reports, latencies, dataset)
 
     m = bm25["overall"]
     print(f"\nBM25  R@1={m['recall_at_1']:.1%} | R@5={m['recall_at_5']:.1%} | "

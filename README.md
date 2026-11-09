@@ -4,6 +4,35 @@ Type a sentence like *"a dog being confused"* and get matching GIFs. Small repli
 [Pinecone GIF search article](https://www.pinecone.io/learn/gif-search/), using a **local Chroma DB**
 instead of Pinecone, and a **5,000-GIF subset** of the TGIF dataset so it runs in minutes.
 
+
+## gifly web interface
+
+GIFt now includes a responsive browser interface for finding and saving GIFs. The same FastAPI server serves the frontend and the existing API routes.
+
+### What changed
+
+- Added a shuffled homepage with paginated browsing, GIF previews and copyable links.
+- Unified GIF and video lookup in one search bar. GIF search selects its local ranking method automatically and prioritizes exact phrases in quotation marks.
+- Added Like and Dislike controls to both the homepage and search results. Homepage likes suggest similar GIFs, and dislikes hide results until restored.
+- Added local sign-up, sign-in and per-account favorites backed by SQLite. **Registration will receive further updates in a future iteration.**
+- Integrated a background retrieval benchmark. Benchmark settings and reports are available through the developer tooling.
+- Added video search and in-browser playback when the Gemini configuration, video files and index are available.
+
+### Run locally
+
+From the project root on Windows, prepare the full TGIF catalog and build the Chroma index:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m web.prepare_tgif
+.\start-web.ps1 -IndexData
+```
+
+Open http://127.0.0.1:8000. On later runs, start with `.\start-web.ps1`. The first setup downloads TGIF descriptions and the MiniLM model. GIF images load from their original URLs.
+
+The app uses Chroma for local search and SQLite for accounts and favorites. For configuration, testing and optional video setup, see the [web guide](web/README.md). The CLI uses the original sample index if present and falls back to the full web index. Streamlit, video ingestion, and benchmarking have separate developer commands.
+
 ## Where to start
 1. Read **How it works** below.
 2. Do the setup steps, then run `notebooks/concepts.ipynb` to learn the ideas (about 20 minutes).
@@ -107,7 +136,7 @@ uvicorn api:app --host 127.0.0.1 --port 8000
 ```
 Search with `curl "http://127.0.0.1:8000/search?q=a%20dog%20being%20confused&k=9"`.
 Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
-The API expects the local GIF index to have been built first.
+The API serves the gifly interface at `/` and searches a local index. Build the sample index or use the prepared full web index.
 
 ### 7. Or run the notebooks
 ```powershell

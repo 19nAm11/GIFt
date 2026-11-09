@@ -1,0 +1,11 @@
+.venv/
+.cache/
+.chroma/
+.local/
+__pycache__/
+*.pyc
+*.log
+.env
+data/tgif.json
+data/tgif-v1.0.tsv
+/tmp*/

@@ -7,17 +7,13 @@ We only download the text file (~18 MB). The GIF images stay on their original s
 """
 import os
 
-import pandas as pd
 import requests
 
 from config import DATA_DIR, TSV_PATH, TSV_URL
 
 
-def load_data(limit=None):
-    """Return a table (pandas DataFrame) with columns `url` and `description`.
-
-    limit: keep only this many random rows. None = keep everything.
-    """
+def ensure_tgif():
+    """Download the shared TGIF source if needed and return its path."""
     # Download only if we do not already have the file.
     if not os.path.exists(TSV_PATH):
         os.makedirs(DATA_DIR, exist_ok=True)
@@ -26,9 +22,18 @@ def load_data(limit=None):
         response.raise_for_status()  # stop with an error if the download failed
         with open(TSV_PATH, "wb") as f:
             f.write(response.content)
+    return TSV_PATH
+
+
+def load_data(limit=None):
+    """Return a table (pandas DataFrame) with columns `url` and `description`.
+
+    limit: keep only this many random rows. None = keep everything.
+    """
+    import pandas as pd
 
     # The file is tab-separated and has no header row, so we name the columns ourselves.
-    df = pd.read_csv(TSV_PATH, sep="\t", names=["url", "description"])
+    df = pd.read_csv(ensure_tgif(), sep="\t", names=["url", "description"])
 
     # Clean up: drop empty rows and repeated GIFs.
     df = df.dropna().drop_duplicates(subset="url").reset_index(drop=True)

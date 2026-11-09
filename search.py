@@ -7,29 +7,53 @@ How a search works:
 
 Try it:  python search.py a dog being confused
 """
-import chromadb
-from sentence_transformers import SentenceTransformer
+from functools import lru_cache
+from pathlib import Path
 
-from config import COLLECTION, DB_PATH, MODEL_NAME
+from config import COLLECTION, DB_PATH, MODEL_NAME, ROOT
 
 MAX_QUERY_CHARS = 500
 MAX_RESULTS = 20
 
-# Loading the model is slow, so we do it once and keep it here for later searches.
-_model = None
+MODEL_CACHE = Path(ROOT) / "web" / ".cache" / "models"
 _collection = None
 
 
+@lru_cache(maxsize=1)
+def get_model():
+    from sentence_transformers import SentenceTransformer
+
+    try:
+        return SentenceTransformer(MODEL_NAME, cache_folder=str(MODEL_CACHE), device="cpu", local_files_only=True)
+    except OSError:
+        return SentenceTransformer(MODEL_NAME, cache_folder=str(MODEL_CACHE), device="cpu")
+
+
 def _load():
-    """Load the model and open the database (only the first time)."""
-    global _model, _collection
-    if _model is None:
+    """Use the original index when present, or the full web index otherwise."""
+    import chromadb
+
+    global _collection
+    if _collection is None and Path(DB_PATH).is_dir():
         try:
             _collection = chromadb.PersistentClient(path=DB_PATH).get_collection(COLLECTION)
-        except Exception as e:
-            raise RuntimeError("No GIF index found. Run `python index.py` first.") from e
-        _model = SentenceTransformer(MODEL_NAME)
-    return _model, _collection
+        except chromadb.errors.NotFoundError:
+            pass
+    if _collection is not None:
+        return get_model(), _collection
+
+    from web.engine import get_collection
+
+    try:
+        collection = get_collection()
+    except Exception as error:
+        raise RuntimeError("No GIF index found. Run `python index.py` or build the full web index first.") from error
+    return get_model(), collection
+
+
+def query_collection(model, collection, query, limit, *, normalize=False, **options):
+    vector = model.encode([query], normalize_embeddings=normalize).tolist()
+    return collection.query(query_embeddings=vector, n_results=limit, **options)
 
 
 def search_gif(query, k=10):
@@ -47,8 +71,7 @@ def search_gif(query, k=10):
 
     model, collection = _load()
 
-    query_vector = model.encode(query).tolist()
-    result = collection.query(query_embeddings=query_vector, n_results=k)
+    result = query_collection(model, collection, query, k)
 
     # Chroma returns lists of lists (one inner list per query). We sent one query, so use [0].
     matches = []

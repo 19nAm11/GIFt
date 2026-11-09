@@ -10,10 +10,10 @@ Usage:  python index.py --limit 5000
 import argparse
 
 import chromadb
-from sentence_transformers import SentenceTransformer
 
-from config import BATCH_SIZE, COLLECTION, DB_PATH, MODEL_NAME
+from config import BATCH_SIZE, COLLECTION, DB_PATH
 from data import load_data
+from search import get_model
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
         return
 
     df = load_data(limit=args.limit)
-    model = SentenceTransformer(MODEL_NAME)  # downloads the model the first time (~90 MB)
+    model = get_model()
 
     # Go through the data in small batches.
     for start in range(0, len(df), BATCH_SIZE):
