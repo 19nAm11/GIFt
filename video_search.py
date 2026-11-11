@@ -2,9 +2,9 @@
 """Text-to-video search using cached Gemini Embedding 2 video vectors.
 
 Run from project root:
-    python test_gemini_video_search.py --check-only
-    python test_gemini_video_search.py --query "a dancing cartoon character" --top-k 5
-    python test_gemini_video_search.py
+    python video_search.py --check-only
+    python video_search.py --query "a dancing cartoon character" --top-k 5
+    python video_search.py
 """
 import argparse
 import json
