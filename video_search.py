@@ -73,14 +73,18 @@ def embed_text(query):
     return vector
 
 
-def rank(vectors, metadata, query_vector, k, video_dir):
+def rank_rows(vectors, query_vector, k):
     video_norms = np.linalg.norm(vectors, axis=1, keepdims=True)
     scores = (vectors / video_norms) @ (query_vector / np.linalg.norm(query_vector))
-    for rank_num, row in enumerate(np.argsort(-scores)[:min(k, len(scores))], 1):
+    return [(int(row), float(scores[row])) for row in np.argsort(-scores)[:k]]
+
+
+def rank(vectors, metadata, query_vector, k, video_dir):
+    for rank_num, (row, score) in enumerate(rank_rows(vectors, query_vector, k), 1):
         relative_path = metadata[int(row)].get("relative_path", "")
         path = video_dir / relative_path
         flag = " [FILE NOT FOUND]" if not path.is_file() else ""
-        print(f"{rank_num}. cosine={scores[row]:.4f} | {relative_path}{flag}")
+        print(f"{rank_num}. cosine={score:.4f} | {relative_path}{flag}")
         print(f"   {path}")
 
 

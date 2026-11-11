@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7f4">
+  <meta name="description" content="Find GIFs for every feeling, idea and moment.">
+  <title>gifly — Find your GIF. Feel the moment.</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=home-feedback">
+  <script src="./app.js?v=auto-search" type="module"></script>
+</head>
+<body>
+  <header class="header wrap">
+    <a class="brand" href="./index.html" aria-label="gifly, home"><span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span>gifly<span class="brand-dot">.</span></a>
+    <nav aria-label="Main navigation">
+      <button class="nav-link active" id="browse-nav" type="button" aria-pressed="true">Explore</button>
+      <button class="nav-link" id="saved-nav" type="button" aria-pressed="false">Saved <span id="saved-count">0</span></button>
+    </nav>
+    <div class="header-actions"><button id="account-button" class="account-button" type="button">Log in / Sign up</button><span id="account-name" hidden></span><button id="logout-button" class="nav-link" type="button" hidden>Log out</button><button id="how-button" class="how-button" type="button">How it works <span aria-hidden="true">↗</span></button></div>
+  </header>
+  <main class="wrap">
+    <section class="hero" aria-labelledby="hero-title">
+      <span class="eyebrow"><span class="sparkle" aria-hidden="true">✳</span> LET A GIF SAY IT FOR YOU</span>
+      <h1 id="hero-title">Find your GIF.<br><span>Feel the moment.</span><svg class="hero-star" viewBox="0 0 56 56" aria-hidden="true"><path d="M28 0 33 20 50 7 37 24 56 28 36 33 49 50 32 37 28 56 23 36 6 49 19 32 0 28 20 23 7 6 24 19Z" fill="currentColor"/></svg></h1>
+      <p>For every feeling, every conversation.<br class="mobile-break"> Describe the moment. Let gifly find it.</p>
+      <form id="search-form" role="search">
+        <div class="search-controls">
+          <label>Search mode
+            <select id="search-mode"><option value="gif">GIFs</option><option value="video">Videos</option></select>
+          </label>
+        </div>
+        <div class="search-form" id="search-row">
+          <svg id="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg>
+          <label class="sr-only" id="search-label" for="search-input">Describe the GIF you are looking for</label>
+          <input id="search-input" type="search" maxlength="300" placeholder="Try “a dog being confused”" autocomplete="off" enterkeyhint="search">
+          <button type="submit" id="search-button">Find GIFs <span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+      <div class="suggestions" id="search-suggestions"><span>Try:</span><button type="button" data-query="a dog being confused">confused dog <span>↗</span></button><button type="button" data-query="animals being cute">cute animals <span>↗</span></button><button type="button" data-query="a person dancing">happy dance <span>↗</span></button><button type="button" data-query="a fluffy dog being cute and dancing like a person">dancing dog <span>↗</span></button></div>
+      <p class="search-hint" id="search-hint">Describe a moment, or put an exact phrase in quotation marks. <span>English descriptions work best.</span></p>
+    </section>
+    <section class="collection" id="gif-collection" aria-labelledby="results-heading">
+      <div class="collection-header"><div><span class="section-eyebrow" id="section-eyebrow">A LITTLE SCROLL, A LITTLE JOY</span><h2 id="results-heading">A little inspiration <span aria-hidden="true">✦</span></h2></div><span id="result-count" class="result-count" role="status" aria-live="polite">Loading the collection…</span></div>
+      <div class="toolbar"><div class="filters" id="category-filters" role="group" aria-label="Filter GIF categories" hidden><button type="button" class="filter active" data-category="all" aria-pressed="true">All</button><button type="button" class="filter" data-category="reactions" aria-pressed="false">💬 Reactions</button><button type="button" class="filter" data-category="animals" aria-pressed="false">🐾 Animals</button><button type="button" class="filter" data-category="celebration" aria-pressed="false">🎉 Celebration</button><button type="button" class="filter" data-category="mood" aria-pressed="false">☁️ Mood</button></div><div class="result-options"><label for="result-limit">Search results</label><select id="result-limit"><option value="9">9 GIF</option><option value="24" selected>24 GIF</option><option value="48">48 GIF</option></select><button type="button" class="motion-button" id="motion-button" aria-pressed="false"><span aria-hidden="true">Ⅱ</span> Pause GIFs</button></div></div>
+      <div class="notice" id="notice" role="status" hidden></div>
+      <div id="feedback-actions" class="tools-actions feedback-summary" hidden>
+        <span id="feedback-summary" role="status"></span>
+        <button type="button" id="feedback-reset">Reset feedback</button>
+        <button type="button" id="feedback-unhide">Show hidden GIFs again</button>
+      </div>
+      <div id="gif-grid" class="gif-grid" aria-busy="true"></div>
+      <div id="empty-state" class="empty-state" hidden><span aria-hidden="true">✳</span><h3 id="empty-title">No GIFs here yet</h3><p id="empty-description">Try a different description.</p><button id="reset-button" type="button">Explore GIF</button></div>
+      <button id="load-more" class="load-more" type="button" hidden>Load more GIFs ↓</button>
+      <div class="collection-end" id="collection-end" hidden><span>✳</span> A little GIF. A big feeling.</div>
+    </section>
+    <section id="search-output" class="collection" aria-labelledby="search-output-title" hidden>
+      <div class="collection-header"><h2 id="search-output-title"></h2></div>
+      <p class="notice" id="search-output-status" role="status"></p>
+      <div id="video-results" class="tools-grid" hidden></div>
+    </section>
+  </main>
+  <footer class="footer wrap"><a class="brand footer-brand" href="./index.html">gifly<span class="brand-dot">.</span></a><p>Less typing. More feeling.</p><span class="footer-note"><i></i><span id="dataset-label">GIFs from original sources</span></span></footer>
+  <dialog id="gif-dialog" class="gif-dialog"><button type="button" class="dialog-close" aria-label="Close">×</button><div class="dialog-preview" id="dialog-preview"></div><div class="dialog-body"><span class="section-eyebrow">FOR YOUR MOMENT</span><h2 id="gif-title"></h2><p id="gif-description"></p><div class="dialog-actions"><button id="copy-button" class="primary-button" type="button">Copy GIF link ↗</button><a id="original-link" target="_blank" rel="noopener noreferrer">View original GIF ↗</a></div><label class="sr-only" for="gif-url">GIF link</label><input id="gif-url" class="url-field" readonly></div></dialog>
+  <dialog id="how-dialog" class="how-dialog"><button type="button" class="dialog-close" aria-label="Close">×</button><span class="eyebrow">BEHIND THE GIF</span><h2>Type an idea.<br>Find the feeling.</h2><p>gifly finds GIFs by matching the meaning of your search with descriptions in the collection.</p><ol class="steps"><li><span>01</span><div><h3>A collection of moments</h3><p>The full TGIF collection is indexed locally, ready to explore by description.</p></div></li><li><span>02</span><div><h3>Describe what you mean</h3><p>Try a feeling, an action or a scene. Search finds the descriptions closest to your idea.</p></div></li><li><span>03</span><div><h3>Find it. Save it. Share it.</h3><p>Open a GIF to copy its link. Log in to keep your favorites in your own collection.</p></div></li></ol><p class="model-note">Search uses descriptions rather than images. Similarity scores rank results; they are not accuracy percentages. GIF images load from their original sources.</p></dialog>
+
+  <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title">
+    <button type="button" class="dialog-close" aria-label="Close">×</button>
+    <span class="eyebrow">YOUR OWN LITTLE COLLECTION</span>
+    <h2 id="auth-title">Welcome back.</h2>
+    <p id="auth-description">Log in to keep your favorite GIFs together.</p>
+    <div class="auth-tabs" role="group" aria-label="Account action"><button id="login-tab" type="button" aria-pressed="true" class="active">Log in</button><button id="register-tab" type="button" aria-pressed="false">Sign up</button></div>
+    <div id="auth-success" class="auth-success" role="status" hidden></div>
+    <form id="auth-form" novalidate>
+      <label for="auth-username">Username</label>
+      <input id="auth-username" name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_.\-]{3,32}" aria-describedby="username-hint username-error">
+      <small id="username-hint">3–32 characters. Use letters (A–Z), numbers, dots (.), underscores (_) or hyphens (-). No spaces. Usernames are not case-sensitive.</small>
+      <div id="username-error" class="field-error" hidden></div>
+      <label for="auth-password">Password</label>
+      <input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128" aria-describedby="password-hint password-error">
+      <small id="password-hint">8–128 characters. Passwords are case-sensitive. You can use letters, numbers, spaces and symbols.</small>
+      <div id="password-error" class="field-error" hidden></div>
+      <div id="auth-confirm-group" hidden><label for="auth-confirm">Confirm password</label><input id="auth-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" aria-describedby="confirm-hint confirm-error"><small id="confirm-hint">Enter the same password again.</small><div id="confirm-error" class="field-error" hidden></div></div>
+      <div id="auth-error" class="auth-error" role="alert" hidden></div>
+      <button id="auth-submit" class="primary-button" type="submit">Log in</button>
+    </form>
+    <p class="auth-note">Your account and favorites are stored on this computer.</p>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

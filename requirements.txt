@@ -1,10 +1,13 @@
-sentence-transformers>=6.1
-chromadb>=1.5
+sentence-transformers>=5.7,<7
+chromadb>=1.5.9,<2
 pandas>=3.0
 requests>=2.32
 streamlit>=1.64
 fastapi>=0.115
 uvicorn>=0.30
+httpx>=0.28,<1
+numpy>=2,<3
+python-dotenv>=1,<2
 # notebook only
 ipykernel>=7.0
 notebook

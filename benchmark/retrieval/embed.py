@@ -55,9 +55,11 @@ class LocalEmbedder:
         from sentence_transformers import SentenceTransformer
         self.name = name
         print(f"Loading {MODEL_IDS[name]} on CPU...")
-        self.model = SentenceTransformer(
-            MODEL_IDS[name], device="cpu", trust_remote_code=False
-        )
+        if name == "minilm":
+            from search import get_model
+            self.model = get_model()
+        else:
+            self.model = SentenceTransformer(MODEL_IDS[name], device="cpu", trust_remote_code=False)
 
     def encode(self, texts, role, batch_size):
         if self.name == "qwen3" and role == "query":
@@ -250,7 +252,7 @@ def embed_kind(model, kind, full, limit, batch_size, chunk_size, dataset="v2", g
     print(f"DONE: {vectors_file} ({len(texts)}, {dim})")
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", choices=tuple(MODEL_IDS), required=True)
@@ -264,7 +266,7 @@ def main():
     parser.add_argument("--chunk-size", type=int, default=128)
     parser.add_argument("--gemini-delay", type=float, default=1.5,
                         help="Minimum seconds between Gemini API requests (e.g. 6). Does not bypass daily quotas")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.limit < 1 or args.chunk_size < 1 or args.gemini_delay < 0 or (args.batch_size is not None and args.batch_size < 1):
         parser.error("--limit, --batch-size and --chunk-size must be positive; --gemini-delay cannot be negative")
     batch = args.batch_size or {"minilm": 8, "gemini": 2, "qwen3": 2, "bge-m3": 2}[args.model]
