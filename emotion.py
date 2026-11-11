@@ -1,30 +1,13 @@
-"""Look at a photo and name the emotion in it."""
+"""Deprecated path: use gift.gemini.emotion. Kept so old imports and commands keep working.
+
+Remove this file once open branches have rebased.
+"""
+import runpy
 import sys
-from google import genai
-from google.genai import types
-
-MODEL = "gemini-3.1-flash-lite"
-
-PROMPT = (
-    "Look at the person's facial expression. "
-    "Reply with a short GIF search phrase describing the emotion, "
-    "like 'a person laughing happily' or 'someone looking shocked'. "
-    "Reply with the phrase only."
-)
-
-
-def describe_emotion(image_bytes, mime_type="image/jpeg"):
-    client = genai.Client()  # uses your GEMINI_API_KEY
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=[
-            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-            PROMPT,
-        ],
-    )
-    return response.text.strip()
-
 
 if __name__ == "__main__":
-    with open(sys.argv[1], "rb") as f:
-        print(describe_emotion(f.read()))
+    runpy.run_module("gift.gemini.emotion", run_name="__main__")
+else:
+    import importlib
+
+    sys.modules[__name__] = importlib.import_module("gift.gemini.emotion")
