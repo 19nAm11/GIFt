@@ -9,12 +9,7 @@ import chromadb
 from google import genai
 from google.genai import types
 
-from config import DATA_DIR
-
-GEMINI_DB_PATH = f"{DATA_DIR}/chroma_db_gemini"
-GEMINI_COLLECTION = "gif-search-gemini"
-GEMINI_MODEL = "gemini-embedding-001"
-DIMENSIONS = 768
+from config import GEMINI_COLLECTION, GEMINI_DB_PATH, GEMINI_DIMENSIONS as DIMENSIONS, GEMINI_MODEL
 
 MAX_QUERY_CHARS = 500
 MAX_RESULTS = 20

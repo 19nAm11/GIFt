@@ -6,13 +6,9 @@ import chromadb
 from google import genai
 from google.genai import errors, types
 
-from config import DATA_DIR
+from config import GEMINI_COLLECTION, GEMINI_DB_PATH, GEMINI_DIMENSIONS as DIMENSIONS, GEMINI_MODEL
 from data import load_data
 
-GEMINI_DB_PATH = f"{DATA_DIR}/chroma_db_gemini"
-GEMINI_COLLECTION = "gif-search-gemini"
-GEMINI_MODEL = "gemini-embedding-001"
-DIMENSIONS = 768
 BATCH_SIZE = 50
 PAUSE = 35.0
 
