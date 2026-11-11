@@ -6,13 +6,14 @@ st.session_state is a small memory that survives those re-runs.
 """
 import streamlit as st
 
+from emotion import describe_emotion
 from feedback import (forget_dislike, forget_similar, hidden_for, load_index, load_memory,
                       remember_dislike, save_memory, search_with_feedback)
 from gemini_search import MAX_QUERY_CHARS, _load, embed_query
 
 st.set_page_config(page_title="GIF Search", layout="wide")
 st.title("GIF Search")
-st.caption("Describe the GIF in your own words. 👍 or 👎 a GIF and the results update to match.")
+st.caption("Describe the GIF in your own words, or use the GIF Mirror. 👍 or 👎 a GIF and the results update to match.")
 
 
 @st.cache_resource  # run this ONCE per app start, not on every click
@@ -27,6 +28,8 @@ st.session_state.setdefault("query", "")  # the search these results belong to
 st.session_state.setdefault("query_vector", None)  # Gemini's vector for that search
 st.session_state.setdefault("liked", [])  # GIF ids the user liked
 st.session_state.setdefault("disliked", [])  # GIF ids the user disliked in THIS search
+st.session_state.setdefault("photo_bytes", None)  # the last webcam photo
+st.session_state.setdefault("photo_phrase", "")  # what Gemini said about it
 
 
 # Button callbacks. Streamlit runs these when a button is clicked, then re-runs the page,
@@ -71,8 +74,27 @@ def unhide_similar():
     reset_feedback()
 
 
-# Input widgets. Each returns the current value.
-query = st.text_input("Describe a GIF", placeholder="a dog being confused", max_chars=MAX_QUERY_CHARS)
+# Input: type a search, OR take a photo and let Gemini describe your face.
+mode = st.radio("Mode", ["🔍 Search", "🪞 GIF Mirror"], horizontal=True)
+
+if mode == "🔍 Search":
+    query = st.text_input("Describe a GIF", placeholder="a dog being confused", max_chars=MAX_QUERY_CHARS)
+else:
+    query = ""
+    photo = st.camera_input("Make a face and take a photo")
+    if photo:
+        photo_bytes = photo.getvalue()
+        if photo_bytes != st.session_state["photo_bytes"]:  # only a NEW photo goes to Gemini
+            with st.spinner("Reading your face..."):
+                try:
+                    st.session_state["photo_phrase"] = describe_emotion(photo_bytes)
+                except Exception as e:
+                    st.error(f"Gemini could not read the photo: {e}")
+                    st.stop()
+            st.session_state["photo_bytes"] = photo_bytes
+        query = st.session_state["photo_phrase"]
+        st.write(f"You look like: **{query}**")
+
 k = st.slider("Results", 3, 20, 9)
 
 if query.strip():
