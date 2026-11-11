@@ -37,7 +37,7 @@ The app uses Chroma for local search and SQLite for accounts and favorites. For 
 1. Read **How it works** below.
 2. Do the setup steps, then run `notebooks/concepts.ipynb` to learn the ideas (about 20 minutes).
 3. Build the index and try the app.
-4. Read the code in order: `data.py`, `index.py`, `search.py`, `app.py`.
+4. Read the code in order: `gift/data.py`, `gift/index.py`, `gift/search.py`, `apps/streamlit_app.py`.
 
 ## Prerequisites
 - Python 3.10+ (developed on 3.13)
@@ -75,28 +75,38 @@ The same model must be used in both phases. Otherwise the query vector and the s
 
 | File | Job |
 |------|-----|
-| `config.py` | All settings: paths, model name, batch size |
-| `data.py` | Download and load the TGIF dataset |
-| `index.py` | Encode descriptions, save to Chroma |
-| `search.py` | `search_gif(query, k)` |
-| `app.py` | Streamlit UI |
-| `api.py` | FastAPI HTTP API |
+| `gift/config.py` | All settings: paths, model names, batch size |
+| `gift/data.py` | Download and load the TGIF dataset |
+| `gift/index.py` | Encode descriptions, save to Chroma |
+| `gift/search.py` | `search_gif(query, k)` |
+| `gift/gemini/` | Gemini index and search, like/dislike feedback, webcam emotion |
+| `gift/video/` | Video embedding and text-to-video search |
+| `apps/streamlit_app.py` | Streamlit UI |
+| `api.py` | FastAPI HTTP API (`uvicorn api:app`) and gifly website |
+| `web/` | The gifly website (see [web guide](web/README.md)) |
+| `benchmark/` | Retrieval benchmark |
 | `notebooks/concepts.ipynb` | Start here: explains embeddings, similarity and vector DBs (no index needed) |
 | `notebooks/gif_search.ipynb` | Step-by-step notebook on the real GIF data |
 | `data/` | Generated, git-ignored: dataset (`tgif-v1.0.tsv`) and database (`chroma_db/`) |
 
 ```
 .
-├── config.py        settings
-├── data.py          step 1: data
-├── index.py         step 2: build index
-├── search.py        step 3: search
-├── app.py           step 4: web app
+├── gift/            the shared code
+│   ├── config.py    settings
+│   ├── data.py      step 1: data
+│   ├── index.py     step 2: build index
+│   ├── search.py    step 3: search
+│   ├── gemini/      Gemini index, search, feedback, emotion
+│   └── video/       video embedding and search
+├── apps/            step 4: Streamlit app
+├── api.py           HTTP API entry point
 ├── notebooks/       concepts.ipynb, gif_search.ipynb
 └── data/            generated, not in git
     ├── tgif-v1.0.tsv
     └── chroma_db/
 ```
+
+**Deprecated root files.** `config.py`, `data.py`, `search.py`, `index.py`, `gemini_index.py`, `gemini_search.py`, `feedback.py`, `emotion.py`, `video_search.py`, `app.py` and `ingestion/embed_videos.py` are one-line shims that point at the code in `gift/` and `apps/`. They keep old imports and commands working while branches catch up. Use the `gift.*` paths in new code. The shims will be deleted later.
 
 ## Step by step
 
@@ -115,19 +125,19 @@ Contributors: also run `pip install pre-commit; pre-commit install`. It blocks c
 
 ### 3. Build the index
 ```powershell
-python index.py --limit 5000
+python -m gift.index --limit 5000
 ```
 This downloads the dataset to `data/`, encodes 5,000 random descriptions, and saves them to `data/chroma_db/`.
 Takes ~1-2 minutes on CPU. Safe to re-run: it skips if the index already exists. Want more? Use a bigger `--limit` (full set is ~125k, much slower).
 
 ### 4. Try a search in the terminal
 ```powershell
-python search.py a dog being confused
+python -m gift.search a dog being confused
 ```
 
 ### 5. Run the web app
 ```powershell
-streamlit run app.py
+streamlit run apps/streamlit_app.py
 ```
 
 ### 6. Run the HTTP API
@@ -161,8 +171,8 @@ See [benchmark/README.md](benchmark/README.md) for the full guide.
 ## Troubleshooting
 - **Broken images**: GIFs are hosted on Tumblr, some links are dead. Normal.
 - **`ModuleNotFoundError` in a notebook** (for example `No module named 'chromadb'`): the notebook is using the wrong Python. Select the `.venv` kernel: in VS Code click **Select Kernel** (top right) and pick `.venv`; in Jupyter use **Kernel > Change kernel > gif-search** (see step 6).
-- **"No GIF index found"**: run `python index.py` first.
-- **Want to re-index**: delete the `data/chroma_db/` folder and run `index.py` again.
+- **"No GIF index found"**: run `python -m gift.index` first.
+- **Want to re-index**: delete the `data/chroma_db/` folder and run `python -m gift.index` again.
 - **Few results look right**: only 5,000 GIFs indexed. Raise `--limit`.
 
 ## Next steps
