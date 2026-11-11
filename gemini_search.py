@@ -10,9 +10,7 @@ from google import genai
 from google.genai import types
 
 from config import GEMINI_COLLECTION, GEMINI_DB_PATH, GEMINI_DIMENSIONS as DIMENSIONS, GEMINI_MODEL
-
-MAX_QUERY_CHARS = 500
-MAX_RESULTS = 20
+from search import MAX_QUERY_CHARS, MAX_RESULTS, format_matches, validate_search_args
 
 _client = None
 _collection = None
@@ -43,24 +41,13 @@ def embed_query(query):
     return response.embeddings[0].values
 
 def search_gif(query, k=10):
-    if not isinstance(query, str) or not query.strip():
-        raise ValueError("Query must be a non-empty string.")
-    if len(query) > MAX_QUERY_CHARS:
-        raise ValueError(f"Query must be {MAX_QUERY_CHARS} characters or fewer.")
-    if type(k) is not int or not 1 <= k <= MAX_RESULTS:
-        raise ValueError(f"Results must be an integer between 1 and {MAX_RESULTS}.")
+    validate_search_args(query, k)
 
     _, collection = _load()
     query_vector = embed_query(query)
 
     result = collection.query(query_embeddings=[query_vector], n_results=k)
-
-    matches = []
-    for meta, description, distance in zip(
-        result["metadatas"][0], result["documents"][0], result["distances"][0]
-    ):
-        matches.append({"url": meta["url"], "description": description, "score": 1 - distance})
-    return matches
+    return format_matches(result)
 
 
 if __name__ == "__main__":

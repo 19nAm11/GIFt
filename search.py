@@ -56,12 +56,8 @@ def query_collection(model, collection, query, limit, *, normalize=False, **opti
     return collection.query(query_embeddings=vector, n_results=limit, **options)
 
 
-def search_gif(query, k=10):
-    """Find the k GIFs that best match `query`.
-
-    Returns a list of dicts: {"url": ..., "description": ..., "score": ...}
-    score is between 0 and 1. Higher = better match.
-    """
+def validate_search_args(query, k):
+    """Raise ValueError when the query or result count is not allowed."""
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be a non-empty string.")
     if len(query) > MAX_QUERY_CHARS:
@@ -69,10 +65,9 @@ def search_gif(query, k=10):
     if type(k) is not int or not 1 <= k <= MAX_RESULTS:
         raise ValueError(f"Results must be an integer between 1 and {MAX_RESULTS}.")
 
-    model, collection = _load()
 
-    result = query_collection(model, collection, query, k)
-
+def format_matches(result):
+    """Turn a one-query Chroma result into a list of {"url", "description", "score"} dicts."""
     # Chroma returns lists of lists (one inner list per query). We sent one query, so use [0].
     matches = []
     for meta, description, distance in zip(
@@ -84,6 +79,19 @@ def search_gif(query, k=10):
             "score": 1 - distance,  # Chroma gives distance (small = close). Flip it into a score.
         })
     return matches
+
+
+def search_gif(query, k=10):
+    """Find the k GIFs that best match `query`.
+
+    Returns a list of dicts: {"url": ..., "description": ..., "score": ...}
+    score is between 0 and 1. Higher = better match.
+    """
+    validate_search_args(query, k)
+
+    model, collection = _load()
+
+    return format_matches(query_collection(model, collection, query, k))
 
 
 if __name__ == "__main__":
