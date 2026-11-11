@@ -26,3 +26,10 @@ benchmark/results/**
 .idea/
 .DS_Store
 Thumbs.db
+
+# Runtime artifacts created by the web app and its tests
+.chroma/
+.cache/
+.local/
+*.sqlite3
+node_modules/
