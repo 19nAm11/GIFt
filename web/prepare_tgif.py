@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 import numpy as np
 
-from data import ensure_tgif
+from gift.data import ensure_tgif
 
 from .engine import ROOT
 

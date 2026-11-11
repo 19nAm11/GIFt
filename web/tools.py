@@ -12,9 +12,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, FiniteFloat
 
-from config import DATA_DIR, ROOT
-from feedback import adjust_query, forget_similar, hidden_for, normalize
-from video_search import embed_text, load_index, rank_rows
+from gift.config import DATA_DIR, ROOT
+from gift.gemini.feedback import adjust_query, forget_similar, hidden_for, normalize
+from gift.video.search import embed_text, load_index, rank_rows
 
 from .auto_search import POOL_SIZE
 
@@ -40,13 +40,13 @@ def gemini_status():
 
 def gif_status():
     if not (Path(DATA_DIR) / "chroma_db_gemini" / "chroma.sqlite3").is_file():
-        return "Build the GIF index with python gemini_index.py."
+        return "Build the GIF index with python -m gift.gemini.index."
     return gemini_status()
 
 
 def video_status():
     if not all((VIDEO_INDEX / name).is_file() for name in ("video_vectors.npy", "video_metadata.jsonl")):
-        return "Add clips to data/videos/inbox and run python -m ingestion.embed_videos."
+        return "Add clips to data/videos/inbox and run python -m gift.video.embed."
     return gemini_status()
 
 
@@ -80,7 +80,7 @@ def local_vector(model, query):
 
 @lru_cache(maxsize=64)
 def gemini_vector(query):
-    from gemini_search import embed_query
+    from gift.gemini.search import embed_query
     return tuple(embed_query(query))
 
 
@@ -96,7 +96,7 @@ def feedback_search(body: FeedbackSearch, request: Request):
         raise HTTPException(503, request.app.state.message)
     try:
         if body.model == "gemini":
-            from gemini_search import _load
+            from gift.gemini.search import _load
             _, collection = _load()
             vector = gemini_vector(query)
         else:

@@ -72,7 +72,7 @@ def local_embeddings(model_name, queries, candidates, batch_size):
     from sentence_transformers import SentenceTransformer
     print(f"Loading {MODEL_IDS[model_name]} on CPU...", flush=True)
     if model_name == "minilm":
-        from search import get_model
+        from gift.search import get_model
         model = get_model()
     else:
         model = SentenceTransformer(MODEL_IDS[model_name], device="cpu", trust_remote_code=False)

@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from config import DATA_DIR, TSV_PATH, TSV_URL
+from gift.config import DATA_DIR, TSV_PATH, TSV_URL
 
 
 def ensure_tgif_tsv(tsv_path=TSV_PATH):
