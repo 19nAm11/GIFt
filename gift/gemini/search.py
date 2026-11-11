@@ -23,7 +23,7 @@ def _load():
             db = chromadb.PersistentClient(path=GEMINI_DB_PATH)
             _collection = db.get_collection(GEMINI_COLLECTION, embedding_function=None)
         except Exception as e:
-            raise RuntimeError("No Gemini index found. Run `python3 gemini_index.py` first.") from e
+            raise RuntimeError("No Gemini index found. Run `python -m gift.gemini.index` first.") from e
         _client = genai.Client()
     return _client, _collection
 

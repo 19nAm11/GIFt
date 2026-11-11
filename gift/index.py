@@ -5,7 +5,7 @@ An "embedding model" turns a sentence into a list of 384 numbers (a vector).
 Sentences with similar meaning get similar vectors.
 We turn every GIF description into a vector and save them in a vector database (Chroma).
 
-Usage:  python index.py --limit 5000
+Usage:  python -m gift.index --limit 5000
 """
 import argparse
 

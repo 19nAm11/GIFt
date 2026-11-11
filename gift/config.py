@@ -15,7 +15,7 @@ MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # small, fast model: 384 
 COLLECTION = "gif-search"  # a "collection" is like a table in the database
 BATCH_SIZE = 64  # encode this many descriptions at a time (faster than one by one)
 
-# Gemini embeddings (used by gemini_index.py and gemini_search.py)
+# Gemini embeddings (used by gift/gemini/index.py and gift/gemini/search.py)
 GEMINI_DB_PATH = os.path.join(DATA_DIR, "chroma_db_gemini")
 GEMINI_COLLECTION = "gif-search-gemini"
 GEMINI_MODEL = "gemini-embedding-001"

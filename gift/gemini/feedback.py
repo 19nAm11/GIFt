@@ -9,7 +9,7 @@ Then we score every GIF again with the new vector.
                  - GAMMA * average(disliked GIF vectors)
 
 Only NumPy is used here: no torch, and no Gemini call. The GIF vectors are the ones
-gemini_index.py already saved, loaded once into memory.
+gift/gemini/index.py already saved, loaded once into memory.
 
 Memory: each 👎 is also saved in data/dislike_memory.json together with the search it
 came from. In a later search that MEANS the same thing (its vector is close to the old

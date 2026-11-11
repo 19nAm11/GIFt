@@ -5,7 +5,7 @@ How a search works:
   2. Ask the database for the stored vectors closest to it.
   3. Return the GIFs those vectors belong to.
 
-Try it:  python search.py a dog being confused
+Try it:  python -m gift.search a dog being confused
 """
 from functools import lru_cache
 from pathlib import Path
@@ -47,7 +47,7 @@ def _load():
     try:
         collection = get_collection()
     except Exception as error:
-        raise RuntimeError("No GIF index found. Run `python index.py` or build the full web index first.") from error
+        raise RuntimeError("No GIF index found. Run `python -m gift.index` or build the full web index first.") from error
     return get_model(), collection
 
 
@@ -97,7 +97,7 @@ def search_gif(query, k=10):
 if __name__ == "__main__":
     import sys
 
-    # Use the words typed after "python search.py" as the query.
+    # Use the words typed after "python -m gift.search" as the query.
     query = " ".join(sys.argv[1:]) or "a dog being confused"
     for r in search_gif(query):
         print(f"{r['score']:.3f}  {r['description']}  {r['url']}")
