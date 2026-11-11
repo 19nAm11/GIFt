@@ -106,7 +106,6 @@ The same model must be used in both phases. Otherwise the query vector and the s
     └── chroma_db/
 ```
 
-**Deprecated root files.** `config.py`, `data.py`, `search.py`, `index.py`, `gemini_index.py`, `gemini_search.py`, `feedback.py`, `emotion.py`, `video_search.py`, `app.py` and `ingestion/embed_videos.py` are one-line shims that point at the code in `gift/` and `apps/`. They keep old imports and commands working while branches catch up. Use the `gift.*` paths in new code. The shims will be deleted later.
 
 ## Step by step
 
