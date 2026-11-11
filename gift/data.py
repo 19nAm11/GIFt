@@ -9,7 +9,7 @@ import os
 
 import requests
 
-from config import DATA_DIR, TSV_PATH, TSV_URL
+from gift.config import DATA_DIR, TSV_PATH, TSV_URL
 
 
 def ensure_tgif():
@@ -23,6 +23,17 @@ def ensure_tgif():
         with open(TSV_PATH, "wb") as f:
             f.write(response.content)
     return TSV_PATH
+
+
+def add_batch(collection, batch, vectors):
+    """Store one batch of rows (url + description) and their vectors in a Chroma collection."""
+    descriptions = batch["description"].tolist()
+    collection.add(
+        ids=[str(i) for i in batch.index],  # every item needs a unique id
+        embeddings=vectors,  # what we search on
+        documents=descriptions,  # the original text, to show in results
+        metadatas=[{"url": u} for u in batch["url"]],  # extra info: the GIF link
+    )
 
 
 def load_data(limit=None):

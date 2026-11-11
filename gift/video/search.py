@@ -2,9 +2,9 @@
 """Text-to-video search using cached Gemini Embedding 2 video vectors.
 
 Run from project root:
-    python test_gemini_video_search.py --check-only
-    python test_gemini_video_search.py --query "a dancing cartoon character" --top-k 5
-    python test_gemini_video_search.py
+    python -m gift.video.search --check-only
+    python -m gift.video.search --query "a dancing cartoon character" --top-k 5
+    python -m gift.video.search
 """
 import argparse
 import json
@@ -16,7 +16,7 @@ import numpy as np
 
 MODEL = "gemini-embedding-2"
 DIM = 768
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_index(folder):

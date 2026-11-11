@@ -9,8 +9,8 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
-from config import MODEL_NAME
-from search import get_model, query_collection
+from gift.config import MODEL_NAME
+from gift.search import get_model, query_collection
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env")

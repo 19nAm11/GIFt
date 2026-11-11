@@ -5,12 +5,12 @@ How a search works:
   2. Ask the database for the stored vectors closest to it.
   3. Return the GIFs those vectors belong to.
 
-Try it:  python search.py a dog being confused
+Try it:  python -m gift.search a dog being confused
 """
 from functools import lru_cache
 from pathlib import Path
 
-from config import COLLECTION, DB_PATH, MODEL_NAME, ROOT
+from gift.config import COLLECTION, DB_PATH, MODEL_NAME, ROOT
 
 MAX_QUERY_CHARS = 500
 MAX_RESULTS = 20
@@ -47,7 +47,7 @@ def _load():
     try:
         collection = get_collection()
     except Exception as error:
-        raise RuntimeError("No GIF index found. Run `python index.py` or build the full web index first.") from error
+        raise RuntimeError("No GIF index found. Run `python -m gift.index` or build the full web index first.") from error
     return get_model(), collection
 
 
@@ -56,12 +56,8 @@ def query_collection(model, collection, query, limit, *, normalize=False, **opti
     return collection.query(query_embeddings=vector, n_results=limit, **options)
 
 
-def search_gif(query, k=10):
-    """Find the k GIFs that best match `query`.
-
-    Returns a list of dicts: {"url": ..., "description": ..., "score": ...}
-    score is between 0 and 1. Higher = better match.
-    """
+def validate_search_args(query, k):
+    """Raise ValueError when the query or result count is not allowed."""
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be a non-empty string.")
     if len(query) > MAX_QUERY_CHARS:
@@ -69,10 +65,9 @@ def search_gif(query, k=10):
     if type(k) is not int or not 1 <= k <= MAX_RESULTS:
         raise ValueError(f"Results must be an integer between 1 and {MAX_RESULTS}.")
 
-    model, collection = _load()
 
-    result = query_collection(model, collection, query, k)
-
+def format_matches(result):
+    """Turn a one-query Chroma result into a list of {"url", "description", "score"} dicts."""
     # Chroma returns lists of lists (one inner list per query). We sent one query, so use [0].
     matches = []
     for meta, description, distance in zip(
@@ -86,10 +81,23 @@ def search_gif(query, k=10):
     return matches
 
 
+def search_gif(query, k=10):
+    """Find the k GIFs that best match `query`.
+
+    Returns a list of dicts: {"url": ..., "description": ..., "score": ...}
+    score is between 0 and 1. Higher = better match.
+    """
+    validate_search_args(query, k)
+
+    model, collection = _load()
+
+    return format_matches(query_collection(model, collection, query, k))
+
+
 if __name__ == "__main__":
     import sys
 
-    # Use the words typed after "python search.py" as the query.
+    # Use the words typed after "python -m gift.search" as the query.
     query = " ".join(sys.argv[1:]) or "a dog being confused"
     for r in search_gif(query):
         print(f"{r['score']:.3f}  {r['description']}  {r['url']}")

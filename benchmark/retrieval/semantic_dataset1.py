@@ -31,7 +31,7 @@ import json
 import os
 import platform
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlsplit
 

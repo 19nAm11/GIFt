@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import HTTPException, Query
 
-from search import search_gif
+from gift.search import search_gif
 from web.server import app
 
 MAX_QUERY_CHARS = 500

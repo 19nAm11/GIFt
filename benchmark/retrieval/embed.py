@@ -56,7 +56,7 @@ class LocalEmbedder:
         self.name = name
         print(f"Loading {MODEL_IDS[name]} on CPU...")
         if name == "minilm":
-            from search import get_model
+            from gift.search import get_model
             self.model = get_model()
         else:
             self.model = SentenceTransformer(MODEL_IDS[name], device="cpu", trust_remote_code=False)

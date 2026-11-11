@@ -1,9 +1,9 @@
 """Gemini Embedding 2: embed local MP4/MOV videos and cache every successful result.
 
 Run from GIFt-main-refactored root (PowerShell):
-    python -m ingestion.embed_videos --dry-run
-    python -m ingestion.embed_videos --limit 1
-    python -m ingestion.embed_videos
+    python -m gift.video.embed --dry-run
+    python -m gift.video.embed --limit 1
+    python -m gift.video.embed
 
 Requires: pip install google-genai numpy
 Environment: GEMINI_API_KEY (or GOOGLE_API_KEY)
@@ -25,7 +25,7 @@ from typing import Any
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = ROOT / "data" / "videos" / "inbox"
 DEFAULT_OUTPUT = ROOT / "data" / "processed" / "gemini_embedding_2"
 MODEL = "gemini-embedding-2"

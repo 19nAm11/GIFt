@@ -6,13 +6,9 @@ import chromadb
 from google import genai
 from google.genai import errors, types
 
-from config import DATA_DIR
-from data import load_data
+from gift.config import GEMINI_COLLECTION, GEMINI_DB_PATH, GEMINI_DIMENSIONS as DIMENSIONS, GEMINI_MODEL
+from gift.data import add_batch, load_data
 
-GEMINI_DB_PATH = f"{DATA_DIR}/chroma_db_gemini"
-GEMINI_COLLECTION = "gif-search-gemini"
-GEMINI_MODEL = "gemini-embedding-001"
-DIMENSIONS = 768
 BATCH_SIZE = 50
 PAUSE = 35.0
 
@@ -61,12 +57,7 @@ def main():
         batch = df.iloc[start:start + BATCH_SIZE]
         descriptions = batch["description"].tolist()
         vectors = embed_batch(client, descriptions)
-        collection.add(
-            ids=[str(i) for i in batch.index],
-            embeddings=vectors,
-            documents=descriptions,
-            metadatas=[{"url": u} for u in batch["url"]],
-        )
+        add_batch(collection, batch, vectors)
         print(f"Indexed {start + len(batch)}/{len(df)}", end="\r")
         time.sleep(PAUSE)
 

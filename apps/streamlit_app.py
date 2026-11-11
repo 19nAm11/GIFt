@@ -1,15 +1,21 @@
 """Step 4: a small web page for searching (Gemini version, with like/dislike feedback).
 
-Run:  streamlit run app.py
+Run:  streamlit run apps/streamlit_app.py
 Streamlit re-runs this whole file from top to bottom every time the user types or clicks.
 st.session_state is a small memory that survives those re-runs.
 """
+import sys
+from pathlib import Path
+
 import streamlit as st
 
-from emotion import describe_emotion
-from feedback import (forget_dislike, forget_similar, hidden_for, load_index, load_memory,
-                      remember_dislike, save_memory, search_with_feedback)
-from gemini_search import MAX_QUERY_CHARS, _load, embed_query
+# `streamlit run apps/streamlit_app.py` only puts apps/ on the path; add the repo root for `gift`.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from gift.gemini.emotion import describe_emotion  # noqa: E402
+from gift.gemini.feedback import (forget_dislike, forget_similar, hidden_for, load_index, load_memory,  # noqa: E402
+                                  remember_dislike, save_memory, search_with_feedback)
+from gift.gemini.search import MAX_QUERY_CHARS, _load, embed_query  # noqa: E402
 
 st.set_page_config(page_title="GIF Search", layout="wide")
 st.title("GIF Search")
