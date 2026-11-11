@@ -1,22 +1,13 @@
-"""Settings shared by every script. Change things here, not in the other files."""
-import os
+"""Deprecated path: use gift.config. Kept so old imports and commands keep working.
 
-# Folder layout. Everything generated (download + database) lives in data/, which git ignores.
-ROOT = os.path.dirname(os.path.abspath(__file__))  # this repo's folder
-DATA_DIR = os.path.join(ROOT, "data")
-TSV_PATH = os.path.join(DATA_DIR, "tgif-v1.0.tsv")  # downloaded dataset
-DB_PATH = os.path.join(DATA_DIR, "chroma_db")  # vector database
+Remove this file once open branches have rebased.
+"""
+import runpy
+import sys
 
-# Dataset
-TSV_URL = "https://raw.githubusercontent.com/raingo/TGIF-Release/master/data/tgif-v1.0.tsv"
+if __name__ == "__main__":
+    runpy.run_module("gift.config", run_name="__main__")
+else:
+    import importlib
 
-# Model and database
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # small, fast model: 384 numbers per sentence
-COLLECTION = "gif-search"  # a "collection" is like a table in the database
-BATCH_SIZE = 64  # encode this many descriptions at a time (faster than one by one)
-
-# Gemini embeddings (used by gemini_index.py and gemini_search.py)
-GEMINI_DB_PATH = os.path.join(DATA_DIR, "chroma_db_gemini")
-GEMINI_COLLECTION = "gif-search-gemini"
-GEMINI_MODEL = "gemini-embedding-001"
-GEMINI_DIMENSIONS = 768
+    sys.modules[__name__] = importlib.import_module("gift.config")
