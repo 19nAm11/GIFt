@@ -10,7 +10,7 @@ from google import genai
 from google.genai import types
 
 from config import GEMINI_COLLECTION, GEMINI_DB_PATH, GEMINI_DIMENSIONS as DIMENSIONS, GEMINI_MODEL
-from search import MAX_QUERY_CHARS, MAX_RESULTS, format_matches, validate_search_args
+from search import MAX_QUERY_CHARS, MAX_RESULTS, format_matches, validate_search_args  # noqa: F401 (limits re-exported for app.py)
 
 _client = None
 _collection = None

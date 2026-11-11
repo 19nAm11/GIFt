@@ -12,7 +12,7 @@ import argparse
 import chromadb
 
 from config import BATCH_SIZE, COLLECTION, DB_PATH
-from data import load_data
+from data import add_batch, load_data
 from search import get_model
 
 
@@ -41,12 +41,7 @@ def main():
 
         vectors = model.encode(descriptions).tolist()  # sentences -> numbers
 
-        collection.add(
-            ids=[str(i) for i in batch.index],  # every item needs a unique id
-            embeddings=vectors,  # what we search on
-            documents=descriptions,  # the original text, to show in results
-            metadatas=[{"url": u} for u in batch["url"]],  # extra info: the GIF link
-        )
+        add_batch(collection, batch, vectors)
         print(f"Indexed {min(start + BATCH_SIZE, len(df))}/{len(df)}", end="\r")
 
     print(f"\nDone. {collection.count()} GIFs indexed.")
