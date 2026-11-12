@@ -2,9 +2,9 @@
 """Text-to-video search using cached Gemini Embedding 2 video vectors.
 
 Run from project root:
-    python video_search.py --check-only
-    python video_search.py --query "a dancing cartoon character" --top-k 5
-    python video_search.py
+    python -m gift.video.search --check-only
+    python -m gift.video.search --query "a dancing cartoon character" --top-k 5
+    python -m gift.video.search
 """
 import argparse
 import json
@@ -16,7 +16,7 @@ import numpy as np
 
 MODEL = "gemini-embedding-2"
 DIM = 768
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_index(folder):
@@ -73,27 +73,18 @@ def embed_text(query):
     return vector
 
 
-def rank(vectors, metadata, query_vector, k, video_dir):
+def rank_rows(vectors, query_vector, k):
     video_norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-    cosine_scores = (vectors / video_norms) @ (query_vector / np.linalg.norm(query_vector))
-    
-    # Áp dụng trọng số 1.1 cho các video thuộc thư mục user_inbox
-    scores = []
-    for i, meta in enumerate(metadata):
-        rel_path = meta.get("relative_path", "")
-        base_score = cosine_scores[i]
-        # Kiểm tra nếu đường dẫn chứa user_inbox thì nhân trọng số 1.1
-        if "user_inbox" in rel_path.replace("\\", "/"):
-            scores.append(base_score * 1.1)
-        else:
-            scores.append(base_score)
-    scores = np.array(scores)
+    scores = (vectors / video_norms) @ (query_vector / np.linalg.norm(query_vector))
+    return [(int(row), float(scores[row])) for row in np.argsort(-scores)[:k]]
 
-    for rank_num, row in enumerate(np.argsort(-scores)[:min(k, len(scores))], 1):
+
+def rank(vectors, metadata, query_vector, k, video_dir):
+    for rank_num, (row, score) in enumerate(rank_rows(vectors, query_vector, k), 1):
         relative_path = metadata[int(row)].get("relative_path", "")
         path = video_dir / relative_path
         flag = " [FILE NOT FOUND]" if not path.is_file() else ""
-        print(f"{rank_num}. score={scores[row]:.4f} (cosine={cosine_scores[row]:.4f}) | {relative_path}{flag}")
+        print(f"{rank_num}. cosine={score:.4f} | {relative_path}{flag}")
         print(f"   {path}")
 
 

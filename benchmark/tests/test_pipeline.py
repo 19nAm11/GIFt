@@ -1,6 +1,5 @@
 """Small offline regression tests; no model or API downloads."""
 from pathlib import Path
-import json
 import numpy as np
 from benchmark.retrieval.keyword_dataset1 import BM25
 from benchmark.retrieval.hybrid_dataset1 import hybrid_one

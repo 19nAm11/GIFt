@@ -4,14 +4,14 @@ Run with: uvicorn api:app --host 127.0.0.1 --port 8000
 """
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import HTTPException, Query
 
-from search import search_gif
+from gift.search import search_gif
+from web.server import app
 
 MAX_QUERY_CHARS = 500
 MAX_RESULTS = 20
 
-app = FastAPI(title="GIF Search API", version="1.0.0")
 
 
 @app.get("/health")

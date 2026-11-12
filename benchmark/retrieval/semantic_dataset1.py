@@ -31,7 +31,7 @@ import json
 import os
 import platform
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -678,7 +678,7 @@ document.getElementById('collapse').addEventListener('click',()=>items.forEach(i
         "__QUERIES__", "\n".join(query_blocks)), encoding="utf-8")
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description="Benchmark cached GIF embeddings; export CSV + HTML query-by-query comparison")
     parser.add_argument("--dataset", choices=tuple(DATASETS), default="v2", help="Default: v2 (corrected 200 Source A)")
     parser.add_argument("--model", choices=("all", *ALL_MODELS), default="all", help="Default: all; Gemini is skipped until vectors are ready")
@@ -691,7 +691,7 @@ def main() -> None:
     parser.add_argument("--inspect", type=int, default=0, help="Legacy flag: report always includes all queries")
     parser.add_argument("--errors-only", action="store_true", help="Use HTML filter 'Tất cả model sai Top 1' after opening")
     parser.add_argument("--query-id", type=str, help="To find one query, use HTML search after opening")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.latency_queries < 1 or args.gemini_delay < 0 or args.inspect < 0:
         parser.error("--latency-queries must be >=1; --gemini-delay and --inspect must be >=0")
     if args.latency:

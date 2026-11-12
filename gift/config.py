@@ -2,7 +2,7 @@
 import os
 
 # Folder layout. Everything generated (download + database) lives in data/, which git ignores.
-ROOT = os.path.dirname(os.path.abspath(__file__))  # this repo's folder
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # this repo's folder
 DATA_DIR = os.path.join(ROOT, "data")
 TSV_PATH = os.path.join(DATA_DIR, "tgif-v1.0.tsv")  # downloaded dataset
 DB_PATH = os.path.join(DATA_DIR, "chroma_db")  # vector database
@@ -14,3 +14,9 @@ TSV_URL = "https://raw.githubusercontent.com/raingo/TGIF-Release/master/data/tgi
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"  # small, fast model: 384 numbers per sentence
 COLLECTION = "gif-search"  # a "collection" is like a table in the database
 BATCH_SIZE = 64  # encode this many descriptions at a time (faster than one by one)
+
+# Gemini embeddings (used by gift/gemini/index.py and gift/gemini/search.py)
+GEMINI_DB_PATH = os.path.join(DATA_DIR, "chroma_db_gemini")
+GEMINI_COLLECTION = "gif-search-gemini"
+GEMINI_MODEL = "gemini-embedding-001"
+GEMINI_DIMENSIONS = 768

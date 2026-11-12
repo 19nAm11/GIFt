@@ -71,7 +71,11 @@ def collect_texts():
 def local_embeddings(model_name, queries, candidates, batch_size):
     from sentence_transformers import SentenceTransformer
     print(f"Loading {MODEL_IDS[model_name]} on CPU...", flush=True)
-    model = SentenceTransformer(MODEL_IDS[model_name], device="cpu", trust_remote_code=False)
+    if model_name == "minilm":
+        from gift.search import get_model
+        model = get_model()
+    else:
+        model = SentenceTransformer(MODEL_IDS[model_name], device="cpu", trust_remote_code=False)
     query_texts = ([QWEN_QUERY_INSTRUCTION + q for q in queries]
                    if model_name == "qwen3" else queries)
     kwargs = {"prompt": ""} if model_name == "qwen3" else {}
@@ -394,14 +398,14 @@ card.hidden=!matches;if(matches)count++;}document.getElementById('visible-count'
     return "".join(parts)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="96 edge cases / 12 categories + HTML dashboard")
     parser.add_argument("--model", choices=["all", *MODEL_IDS], default="all")
     parser.add_argument("--report-only", action="store_true", help="Rebuild HTML/CSV from saved model results; no embeddings")
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--delay", type=float, default=6.0, help="Gemini API request interval (seconds)")
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.batch_size < 1 or args.delay < 0:
         parser.error("--batch-size >= 1; --delay >= 0 are required")
     if len(TEST_CASES) != 96 or len({c["id"] for c in TEST_CASES}) != 96:

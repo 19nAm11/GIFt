@@ -5,15 +5,15 @@ An "embedding model" turns a sentence into a list of 384 numbers (a vector).
 Sentences with similar meaning get similar vectors.
 We turn every GIF description into a vector and save them in a vector database (Chroma).
 
-Usage:  python index.py --limit 5000
+Usage:  python -m gift.index --limit 5000
 """
 import argparse
 
 import chromadb
-from sentence_transformers import SentenceTransformer
 
-from config import BATCH_SIZE, COLLECTION, DB_PATH, MODEL_NAME
-from data import load_data
+from gift.config import BATCH_SIZE, COLLECTION, DB_PATH
+from gift.data import add_batch, load_data
+from gift.search import get_model
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
         return
 
     df = load_data(limit=args.limit)
-    model = SentenceTransformer(MODEL_NAME)  # downloads the model the first time (~90 MB)
+    model = get_model()
 
     # Go through the data in small batches.
     for start in range(0, len(df), BATCH_SIZE):
@@ -41,12 +41,7 @@ def main():
 
         vectors = model.encode(descriptions).tolist()  # sentences -> numbers
 
-        collection.add(
-            ids=[str(i) for i in batch.index],  # every item needs a unique id
-            embeddings=vectors,  # what we search on
-            documents=descriptions,  # the original text, to show in results
-            metadatas=[{"url": u} for u in batch["url"]],  # extra info: the GIF link
-        )
+        add_batch(collection, batch, vectors)
         print(f"Indexed {min(start + BATCH_SIZE, len(df))}/{len(df)}", end="\r")
 
     print(f"\nDone. {collection.count()} GIFs indexed.")
