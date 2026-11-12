@@ -94,7 +94,8 @@ def main():
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--check-only", action="store_true", help="Validate files without API call")
     parser.add_argument("--index-dir", type=Path, default=ROOT / "data/processed/gemini_embedding_2")
-    parser.add_argument("--video-dir", type=Path, default=ROOT / "data/videos/inbox")
+    # Sửa lại --video-dir trỏ chung về thư mục cha "videos" thay vì cố định vào "inbox"
+    parser.add_argument("--video-dir", type=Path, default=ROOT / "data/videos")
     args = parser.parse_args()
     if args.top_k < 1:
         parser.error("--top-k must be >= 1")
