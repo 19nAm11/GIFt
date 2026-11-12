@@ -2,9 +2,9 @@
 """Text-to-video search using cached Gemini Embedding 2 video vectors.
 
 Run from project root:
-    python test_gemini_video_search.py --check-only
-    python test_gemini_video_search.py --query "a dancing cartoon character" --top-k 5
-    python test_gemini_video_search.py
+    python video_search.py --check-only
+    python video_search.py --query "a dancing cartoon character" --top-k 5
+    python video_search.py
 """
 import argparse
 import json
@@ -75,12 +75,25 @@ def embed_text(query):
 
 def rank(vectors, metadata, query_vector, k, video_dir):
     video_norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-    scores = (vectors / video_norms) @ (query_vector / np.linalg.norm(query_vector))
+    cosine_scores = (vectors / video_norms) @ (query_vector / np.linalg.norm(query_vector))
+    
+    # Áp dụng trọng số 1.1 cho các video thuộc thư mục user_inbox
+    scores = []
+    for i, meta in enumerate(metadata):
+        rel_path = meta.get("relative_path", "")
+        base_score = cosine_scores[i]
+        # Kiểm tra nếu đường dẫn chứa user_inbox thì nhân trọng số 1.1
+        if "user_inbox" in rel_path.replace("\\", "/"):
+            scores.append(base_score * 1.1)
+        else:
+            scores.append(base_score)
+    scores = np.array(scores)
+
     for rank_num, row in enumerate(np.argsort(-scores)[:min(k, len(scores))], 1):
         relative_path = metadata[int(row)].get("relative_path", "")
         path = video_dir / relative_path
         flag = " [FILE NOT FOUND]" if not path.is_file() else ""
-        print(f"{rank_num}. cosine={scores[row]:.4f} | {relative_path}{flag}")
+        print(f"{rank_num}. score={scores[row]:.4f} (cosine={cosine_scores[row]:.4f}) | {relative_path}{flag}")
         print(f"   {path}")
 
 
@@ -90,7 +103,8 @@ def main():
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--check-only", action="store_true", help="Validate files without API call")
     parser.add_argument("--index-dir", type=Path, default=ROOT / "data/processed/gemini_embedding_2")
-    parser.add_argument("--video-dir", type=Path, default=ROOT / "data/videos/inbox")
+    # Sửa lại --video-dir trỏ chung về thư mục cha "videos" thay vì cố định vào "inbox"
+    parser.add_argument("--video-dir", type=Path, default=ROOT / "data/videos")
     args = parser.parse_args()
     if args.top_k < 1:
         parser.error("--top-k must be >= 1")

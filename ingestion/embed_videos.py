@@ -26,7 +26,7 @@ from typing import Any
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_INPUT = ROOT / "data" / "videos" / "inbox"
+DEFAULT_INPUT = ROOT / "data" / "videos"  # Thư mục gốc chứa cả inbox và user_inbox
 DEFAULT_OUTPUT = ROOT / "data" / "processed" / "gemini_embedding_2"
 MODEL = "gemini-embedding-2"
 MIMES = {".mp4": "video/mp4", ".mov": "video/quicktime"}
@@ -87,30 +87,32 @@ def verify_vector(values: Any, dim: int) -> np.ndarray:
     return array / norm  # explicit unit normalization; search with dot product = cosine
 
 
-def load_cached(cache_dir: Path, digest: str, dim: int) -> np.ndarray | None:
+def load_cached(cache_dir: Path, digest: str, dim: int, default_weight: float) -> tuple[np.ndarray | None, float]:
     vector_file, meta_file = cache_files(cache_dir, digest, dim)
     if not vector_file.exists() or not meta_file.exists():
-        return None
+        return None, default_weight
     try:
         info = json.loads(meta_file.read_text(encoding="utf-8"))
         if (info.get("sha256") != digest or info.get("model") != MODEL
                 or info.get("dimension") != dim or info.get("modality") != "video"):
-            return None
+            return None, default_weight
         values = np.load(vector_file, allow_pickle=False)
-        return verify_vector(values, dim)
+        # Nếu cache cũ chưa có trường weight, lấy default_weight ứng với thư mục hiện tại
+        weight = float(info.get("weight", default_weight))
+        return verify_vector(values, dim), weight
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
-        return None
+        return None, default_weight
 
 
-def save_cache(cache_dir: Path, digest: str, dim: int, vector: np.ndarray) -> None:
+def save_cache(cache_dir: Path, digest: str, dim: int, vector: np.ndarray, weight: float) -> None:
     vector_file, meta_file = cache_files(cache_dir, digest, dim)
-    # Write vector first and metadata last as a commit marker.
     atomic_array(vector_file, vector)
     atomic_json(meta_file, {
         "sha256": digest,
         "model": MODEL,
         "dimension": dim,
         "modality": "video",
+        "weight": weight,
         "created_at_utc": now_utc(),
         "normalized": True,
     })
@@ -172,23 +174,21 @@ def is_quota_error(exc: Exception) -> bool:
     ) or any(token in message for token in ("429", "resource_exhausted", "quota exceeded", "rate limit exceeded"))
 
 
-def is_transient_error(exc: Exception) -> bool:
-    code = str(getattr(exc, "code", ""))
-    msg = str(exc).lower()
-    return code in {"500", "502", "503", "504"} or any(t in msg for t in (
-        "internal server error", "service unavailable", "temporarily unavailable", "503",
-    ))
-
-
 def build_outputs(items: list[dict], out: Path, cache_dir: Path, dim: int, *, status: str) -> dict:
-    """Export only complete, valid video/cache pairs in stable sorted order."""
     rows: list[dict] = []
     vectors: list[np.ndarray] = []
     for item in items:
         digest = item["sha256"]
-        vector = load_cached(cache_dir, digest, dim)
+        expected_weight = item["weight"]
+        vector, cached_weight = load_cached(cache_dir, digest, dim, expected_weight)
         if vector is None:
             continue
+        
+        # Nếu cache cũ chưa có weight hoặc weight khác thư mục hiện tại, cập nhật lại file cache JSON
+        if cached_weight != expected_weight:
+            save_cache(cache_dir, digest, dim, vector, expected_weight)
+            cached_weight = expected_weight
+
         rows.append({
             "video_id": f"video_{digest[:20]}",
             "relative_path": item["relative_path"],
@@ -196,12 +196,13 @@ def build_outputs(items: list[dict], out: Path, cache_dir: Path, dim: int, *, st
             "file_size_bytes": item["file_size_bytes"],
             "model": MODEL,
             "dimension": dim,
+            "weight": cached_weight,
             "vector_row": len(vectors),
             "embedding_kind": "direct_video",
         })
         vectors.append(vector)
+        
     matrix = np.stack(vectors).astype(np.float32) if vectors else np.empty((0, dim), dtype=np.float32)
-    # Write metadata first, matrix second. Re-running rebuilds both from cache.
     atomic_jsonl(out / "video_metadata.jsonl", rows)
     atomic_array(out / "video_vectors.npy", matrix)
     summary = {
@@ -222,6 +223,7 @@ def run(args: argparse.Namespace, *, client: Any = None) -> dict:
     out: Path = args.output.resolve()
     if not inp.is_dir():
         raise FileNotFoundError(f"Input folder does not exist: {inp}")
+    
     files = sorted((p for p in inp.rglob("*") if p.is_file() and p.suffix.lower() in MIMES),
                    key=lambda p: p.relative_to(inp).as_posix().lower())
     if not files:
@@ -230,16 +232,32 @@ def run(args: argparse.Namespace, *, client: Any = None) -> dict:
         raise ValueError("Require --limit >= 0, --delay >= 0, --dimension = 768/1536/3072")
     if out == inp or out.is_relative_to(inp):
         raise ValueError("Output cannot be inside input video folder")
+    
     cache_dir = out / "cache"
     items = []
     print(f"INPUT: {inp}\nOUTPUT: {out}\nMODEL: {MODEL} ({args.dimension} dims)")
+    
     for p in files:
         digest = sha256_file(p)
         rel = p.relative_to(inp).as_posix()
-        cached = load_cached(cache_dir, digest, args.dimension) is not None
-        items.append({"path": p, "relative_path": rel, "sha256": digest,
-                      "file_size_bytes": p.stat().st_size, "cached": cached})
-        print(f"  {'CACHED' if cached else 'NEW   '}  {rel} ({p.stat().st_size / 1024**2:.2f} MB)")
+        
+        # Phân loại thư mục: nếu nằm trong user_inbox thì weight = 1.1, ngược lại inbox thì weight = 1.0
+        rel_parts = p.relative_to(inp).parts
+        if len(rel_parts) > 0 and rel_parts[0].lower() == "user_inbox":
+            weight = 1.1
+        else:
+            weight = 1.0
+
+        vector, cached_weight = load_cached(cache_dir, digest, args.dimension, weight)
+        cached = vector is not None
+        
+        items.append({
+            "path": p, "relative_path": rel, "sha256": digest,
+            "file_size_bytes": p.stat().st_size, "cached": cached, "weight": weight
+        })
+        print(f"  {'CACHED' :<6} (weight={weight}) {rel} ({p.stat().st_size / 1024**2:.2f} MB)" if cached 
+              else f"  {'NEW   ' :<6} (weight={weight}) {rel} ({p.stat().st_size / 1024**2:.2f} MB)")
+
     new_items = [x for x in items if not x["cached"]]
     chosen = new_items[:args.limit] if args.limit else new_items
     print(f"Found {len(items)} videos; cached {len(items)-len(new_items)}; "
@@ -267,10 +285,9 @@ def run(args: argparse.Namespace, *, client: Any = None) -> dict:
         last_request_started = time.monotonic()
         try:
             vector = embed_video(client, item["path"], args.dimension)
-            # Avoid storing a vector for a file that changed while being uploaded.
             if sha256_file(item["path"]) != item["sha256"]:
                 raise RuntimeError("Video file changed during embedding; refusing to cache")
-            save_cache(cache_dir, item["sha256"], args.dimension, vector)
+            save_cache(cache_dir, item["sha256"], args.dimension, vector, item["weight"])
             processed += 1
             print(f"    SAVED ({args.dimension} values)", flush=True)
         except Exception as exc:
