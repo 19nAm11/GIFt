@@ -1,55 +1,61 @@
-# Cấu hình tài khoản Firebase
+# Firebase account setup
 
-## Bổ sung cho Your contribution
+## Your contribution configuration
 
-Publish lại file `firestore.rules` ở thư mục gốc để cho phép chủ tài khoản đọc/ghi metadata tại `users/{uid}/contributions/{gifId}`. Rules mới giữ nguyên quyền riêng tư của favorites và chỉ mở collection contribution cho đúng UID sở hữu; không mở toàn bộ database.
+Publish the project-root `firestore.rules` file to allow account owners to read and write metadata at `users/{uid}/contributions/{gifId}`. The updated rules preserve favorites privacy and restrict each contribution collection to its owning UID; they do not open the entire database.
 
-Trên Firebase Console, vào project `gift-main` → Firestore Database → Rules, thay nội dung bằng file `firestore.rules` rồi Publish. Sau đó tải lại website và mở **Your contribution** để đồng bộ metadata. Lỗi đồng bộ chỉ được ghi trong **F12 → Console** với tiền tố `[gifly:cloud-sync]`; giao diện không hiện banner hoặc toast. Sau khi sửa cấu hình, tải lại trang để thử đồng bộ lại.
+In Firebase Console, select the `gift-main` project, open **Firestore Database → Rules**, replace the rules with the contents of `firestore.rules`, and click **Publish**. Reload the website and open **Your contribution** to synchronize metadata. Synchronization errors are logged only in **F12 → Console**, prefixed `[gifly:cloud-sync]`; the interface does not display banners or toasts. After fixing the configuration, reload the page to retry synchronization.
 
-GIF và tác vụ được lưu bền vững trên server theo Firebase UID. Metadata được đồng bộ vào collection của tài khoản; chỉ GIF đặt public mới được đưa vào tìm kiếm chung. Xem `web/CONTRIBUTIONS.md` để biết cấu hình lưu trữ và giới hạn.
+GIF files and jobs are stored persistently on the server by Firebase UID. Metadata is mirrored to the account's collection, and only public GIFs are included in shared search. See [the contribution guide](web/CONTRIBUTIONS.md) for storage settings and limits.
 
-## Thiết lập tài khoản hiện có
+## Account configuration
 
-Ứng dụng dùng Firebase Authentication cho username và password, Cloud Firestore cho GIF yêu thích. Khách vẫn tìm kiếm khi Firebase chưa được cấu hình.
+The application uses Firebase Authentication for username/password accounts and Cloud Firestore for favorite GIFs. Guests can continue searching while Firebase configuration is pending.
 
-1. Tạo Firebase project và đăng ký một Web app trong Project settings.
-2. Chép apiKey, authDomain, projectId và appId vào web/firebase-config.js. Đây là cấu hình công khai. Giữ service account ngoài frontend.
-3. Giữ AUTH_USERNAME_DOMAIN ổn định. Mặc định users.gifly.invalid, chỉ dùng cho định danh nội bộ. Username được trim và viết thường. Không gửi thư đến email nội bộ.
-4. Trong Authentication → Sign-in method, bật Email/Password. Trong Settings → Password policy, chọn Require và độ dài tối thiểu 8. Thêm hostname triển khai vào Authorized domains, bao gồm localhost khi chạy cục bộ.
-5. Tạo Cloud Firestore ở chế độ production.
-6. Dùng Firebase CLI chạy lệnh firebase deploy --only firestore:rules --project YOUR_FIREBASE_PROJECT_ID từ thư mục gốc. Hoặc dán firestore.rules vào tab Rules và Publish.
+1. Create a Firebase project and register a Web app in **Project settings**.
+2. Copy `apiKey`, `authDomain`, `projectId`, and `appId` into `web/firebase-config.js`. These are public web configuration values. Keep service-account keys out of the frontend.
+3. Keep `AUTH_USERNAME_DOMAIN` stable. Its default, `users.gifly.invalid`, is used only for internal account identifiers. Usernames are trimmed and converted to lowercase. Do not send email to these internal addresses.
+4. In **Authentication → Sign-in method**, enable **Email/Password**. Under **Settings → Password policy**, select **Require** and a minimum length of 8 characters. Add deployment hostnames to **Authorized domains**, including `localhost` for local development.
+5. Create Cloud Firestore in production mode.
+6. From the project root, deploy the rules with the Firebase CLI:
 
-Chạy lại start-web.ps1 để phục vụ module Firebase mới rồi tải lại trang. Không cần Firebase Admin SDK.
+   ```powershell
+   firebase deploy --only firestore:rules --project YOUR_FIREBASE_PROJECT_ID
+   ```
 
-Đăng ký thành công sẽ đăng nhập ngay. Nếu cập nhật displayName lỗi, tài khoản vẫn tồn tại. Ứng dụng ghi thông báo vào Console và thử cập nhật tên ở lần đăng nhập sau.
+   Alternatively, paste `firestore.rules` into the Console's **Rules** tab and publish them there.
 
-Tài khoản SQLite và yêu thích cũ không tự chuyển sang Firebase. File cũ còn trong web/.local để chủ dự án lập kế hoạch chuyển dữ liệu.
+Restart `start-web.ps1` to serve the Firebase modules, then reload the page. Firebase Admin SDK is not required.
 
-## Kiểm chứng khi có cấu hình thật
+Successful registration signs the user in immediately. If updating `displayName` fails, the account still exists. The application logs the notification to Console and retries the display-name update on a later sign-in.
 
-- Đăng ký user_test, xác nhận form đóng và username xuất hiện.
-- Đăng nhập bằng USER_TEST và user_test để xác nhận cùng định danh.
-- Lưu GIF, tải lại trang, đăng xuất và đăng nhập lại, thử trên thiết bị khác.
-- Đổi tài khoản A sang B và xác nhận danh sách A đã được dọn.
-- Trong Rules Playground hoặc Emulator, dùng UID A đọc/ghi users/B/favorites/test. Cả hai phải bị từ chối. Lặp lại với khách.
-- Thử ghi trường khác gifId hoặc gifId khác document ID. Rules phải từ chối.
-- Ngắt mạng trước và trong khi lưu. Không được báo thành công giả. Nút phải cho phép thử lại.
-- Ngắt mạng khi đăng nhập/đăng ký và kiểm tra form được mở khóa.
-- Chặn SDK và kiểm tra khách vẫn tìm kiếm được.
+Legacy SQLite accounts and favorites are not automatically migrated to Firebase. Existing files remain under `web/.local` so the project owner can plan a migration.
 
-Đã kiểm chứng trên project Firebase thật ngày 2026-11-12.
+## Validation with a real Firebase configuration
 
-- Tạo hai tài khoản tạm, cập nhật displayName và đăng nhập thành công.
-- Chủ tài khoản lưu, đọc và mở lại yêu thích sau một lần đăng nhập mới.
-- Rules chặn khách và tài khoản B đọc, sửa hoặc xóa yêu thích của A, đồng thời từ chối gifId không khớp.
-- Trên giao diện đã kiểm tra đăng ký tự đăng nhập, username viết hoa/thường, lưu từ trạng thái khách, giữ phiên sau tải lại, Saved và đăng xuất.
-- Đã sửa hai lỗi điều hướng khi đăng xuất từ Saved và khi đăng nhập để mở Saved.
-- Đã dọn toàn bộ tài khoản và dữ liệu dùng riêng cho các lượt kiểm thử trên.
+- Register `user_test` and confirm that the form closes and the username appears.
+- Sign in as `USER_TEST` and `user_test` to confirm that both resolve to the same account.
+- Save a GIF, reload the page, sign out and back in, and check from another device.
+- Switch from account A to B and confirm that A's list is cleared from the interface.
+- In Rules Playground or the Emulator, use UID A to read and write `users/B/favorites/test`. Both operations must be denied. Repeat as a guest.
+- Attempt to write fields other than `gifId`, or a `gifId` that differs from the document ID. The rules must reject these writes.
+- Disconnect before and during a save. The application must not claim success, and the control must allow another attempt.
+- Disconnect during registration/sign-in and check that the form controls become available again.
+- Block the SDK and confirm that guest search still works.
 
-Chưa kiểm chứng đồng bộ giữa hai thiết bị vật lý hoặc mất mạng thực tế.
+The following checks were completed against a real Firebase project on **2026-11-12**:
 
-Tài liệu chính thức
+- Created two temporary accounts, updated `displayName`, and signed in successfully.
+- Saved and read favorites as their owner and retrieved them after a new sign-in.
+- Confirmed that rules blocked guests and account B from reading, modifying, or deleting A's favorites, and rejected mismatched `gifId` values.
+- Checked automatic sign-in after registration, case-insensitive usernames, saving from a guest session, session persistence after reload, Saved navigation, and sign-out in the browser.
+- Fixed two navigation issues involving sign-out from Saved and sign-in to open Saved.
+- Removed the accounts and data created specifically for those checks.
 
-- https://firebase.google.com/docs/auth/web/password-auth
-- https://firebase.google.com/docs/auth/web/auth-state-persistence
-- https://firebase.google.com/docs/firestore/security/rules-conditions
+Synchronization between two physical devices and actual network outages have not been verified.
+
+## Official documentation
+
+- [Password-based authentication](https://firebase.google.com/docs/auth/web/password-auth)
+- [Authentication state persistence](https://firebase.google.com/docs/auth/web/auth-state-persistence)
+- [Firestore security rule conditions](https://firebase.google.com/docs/firestore/security/rules-conditions)
